@@ -20,12 +20,23 @@ namespace OpenTTD_IRC_Info
                 var serverInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerInfo>(ottd);
                 var year = (int)Math.Floor(serverInfo.GameDate / 365.24);
 
-                if (lastYear != year && year % 10 == 0)
+                if (lastYear != year)
                 {
+                    Console.WriteLine($"Year {year}");
                     await new OpenTTD.Udp.ClientDetailInfo().Send(ottd);
                     var serverDetailInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerDetailInfo>(ottd);
-                    var companies = String.Join(", ", serverDetailInfo.Companies.Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
-                    await irc.WriteCommand($"PRIVMSG {channel} :{year} - {companies}");
+
+                    if (year % 10 == 0)
+                    {
+                        var companies = String.Join(", ", serverDetailInfo.Companies.Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
+                        await irc.WriteCommand($"PRIVMSG {channel} :{year} - {companies}");
+                    }
+
+                    var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Income < 0 && c.Money < -2 * c.Income);
+                    foreach (var c in companiesInTrouble)
+                    {
+                        await irc.WriteCommand($"PRIVMSG {channel} :{year} - {c.Name} might be in trouble! Money: {c.Money:N0} Yearly income: {c.Income:N0}");
+                    }
                 }
                 lastYear = year;
             }
