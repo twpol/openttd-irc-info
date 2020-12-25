@@ -97,6 +97,13 @@ namespace OpenTTD_IRC_Info.OpenTTD.Udp
             return value;
         }
 
+        protected static int ReadInt32(byte[] buffer, ref int pos)
+        {
+            var value = BitConverter.ToInt32(buffer, pos);
+            pos += 4;
+            return value;
+        }
+
         protected static uint ReadUInt32(byte[] buffer, ref int pos)
         {
             var value = BitConverter.ToUInt32(buffer, pos);
@@ -142,8 +149,8 @@ namespace OpenTTD_IRC_Info.OpenTTD.Udp
     {
         public byte Version { get; private set; }
 
-        public uint GameDate { get; private set; }
-        public uint StartDate { get; private set; }
+        public DateTimeOffset GameDate { get; private set; }
+        public DateTimeOffset StartDate { get; private set; }
 
         public byte CompaniesMax { get; private set; }
         public byte CompaniesOn { get; private set; }
@@ -178,8 +185,8 @@ namespace OpenTTD_IRC_Info.OpenTTD.Udp
                 pos += 4 /* GRF ID */ + 16 /* MD5 */;
             }
 
-            GameDate = Packet.ReadUInt32(buffer, ref pos);
-            StartDate = Packet.ReadUInt32(buffer, ref pos);
+            GameDate = OpenTTD.Date.GetDate(Packet.ReadInt32(buffer, ref pos));
+            StartDate = OpenTTD.Date.GetDate(Packet.ReadInt32(buffer, ref pos));
 
             CompaniesMax = Packet.ReadUInt8(buffer, ref pos);
             CompaniesOn = Packet.ReadUInt8(buffer, ref pos);

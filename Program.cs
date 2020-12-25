@@ -6,6 +6,11 @@ namespace OpenTTD_IRC_Info
 {
     class Program
     {
+        const int MSPerTick = 30;
+        const int TicksPerDay = 74;
+        const int DaysPerWeek = 7;
+        const int MSPerWeek = MSPerTick * TicksPerDay * DaysPerWeek;
+
         static async void Main(string ottdServer, string ircServer, string channel, int ottdPort = 3979, int ircPort = 6667, string ircNickname = "OTTDBot")
         {
             var ottd = new UdpClient(ottdServer, ottdPort);
@@ -14,11 +19,11 @@ namespace OpenTTD_IRC_Info
 
             while (irc.Connected)
             {
-                System.Threading.Thread.Sleep(10000);
+                System.Threading.Thread.Sleep(MSPerWeek);
 
                 await new OpenTTD.Udp.ClientInfo().Send(ottd);
                 var serverInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerInfo>(ottd);
-                var year = (int)Math.Floor(serverInfo.GameDate / 365.24);
+                var year = serverInfo.GameDate.Year;
 
                 if (lastYear != year)
                 {
