@@ -33,11 +33,11 @@ namespace OpenTTD_IRC_Info
 
                     if (year % 10 == 0)
                     {
-                        var companies = String.Join(", ", serverDetailInfo.Companies.Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
+                        var companies = String.Join(", ", serverDetailInfo.Companies.OrderBy(c => -c.Money).Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
                         await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
                     }
 
-                    var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Income < 0 && c.Money < -2 * c.Income);
+                    var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Income < 0 && c.Money < -2 * c.Income).OrderBy(c => -c.Money);
                     foreach (var c in companiesInTrouble)
                     {
                         await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Money:N0} Yearly income: {c.Income:N0}");
