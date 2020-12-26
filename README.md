@@ -28,7 +28,7 @@ dotnet run [options]
 
 - `--irc-nickname <irc-nickname>`
 
-  IRC nickname (default: OTTDBot).
+  IRC nickname (default: OpenTTDInfo).
 
 - `--irc-channel <irc-channel>`
 
@@ -37,6 +37,6 @@ dotnet run [options]
 ## Example IRC output
 
 ```
-<OTTDBot> 1990 - Silver Transport (128,135 += 20,482), Other Company Name (123,456 += 12,345)
-<OTTDBot> 1991 - Silver Transport might be in trouble! Money: 113,085 Yearly income: -118,366
+<OpenTTDInfo> 1990 - Silver Transport (128,135 += 20,482), Other Company Name (123,456 += 12,345)
+<OpenTTDInfo> 1991 - Silver Transport might be in trouble! Money: 113,085 Yearly income: -118,366
 ```

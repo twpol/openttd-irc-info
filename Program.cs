@@ -11,7 +11,7 @@ namespace OpenTTD_IRC_Info
         const int DaysPerWeek = 7;
         const int MSPerWeek = MSPerTick * TicksPerDay * DaysPerWeek;
 
-        static async void Main(string ottdServer, string ircServer, string ircChannel, int ottdPort = 3979, int ircPort = 6667, string ircNickname = "OTTDBot")
+        static async void Main(string ottdServer, string ircServer, string ircChannel, int ottdPort = 3979, int ircPort = 6667, string ircNickname = "OpenTTDInfo")
         {
             var ottd = new UdpClient(ottdServer, ottdPort);
             var irc = new IRC.Client(ircServer, ircPort, ircNickname);
