@@ -24,10 +24,11 @@ namespace OpenTTD_IRC_Info
                 await new OpenTTD.Udp.ClientInfo().Send(ottd);
                 var serverInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerInfo>(ottd);
                 var year = serverInfo.GameDate.Year;
+                Console.WriteLine($"OpenTTD {serverInfo.GameDate:yyyy-MM-dd}");
 
                 if (lastYear != year)
                 {
-                    Console.WriteLine($"Year {year}");
+                    Console.WriteLine($"OpenTTD update for {year}");
                     await new OpenTTD.Udp.ClientDetailInfo().Send(ottd);
                     var serverDetailInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerDetailInfo>(ottd);
 
