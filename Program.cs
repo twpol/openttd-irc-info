@@ -38,7 +38,7 @@ namespace OpenTTD_IRC_Info
                         await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
                     }
 
-                    var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Income < 0 && c.Money < -2 * c.Income).OrderBy(c => -c.Money);
+                    var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Money >= 0 && c.Income < 0 && c.Money < -2 * c.Income).OrderBy(c => -c.Money);
                     foreach (var c in companiesInTrouble)
                     {
                         await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Money:N0} Yearly income: {c.Income:N0}");
