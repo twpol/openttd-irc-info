@@ -20,31 +20,37 @@ namespace OpenTTD_IRC_Info
             while (irc.Connected)
             {
                 System.Threading.Thread.Sleep(MSPerWeek);
-
-                await new OpenTTD.Udp.ClientInfo().Send(ottd);
-                var serverInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerInfo>(ottd);
-                var year = serverInfo.GameDate.Year;
-                Console.WriteLine($"OpenTTD {serverInfo.GameDate:yyyy-MM-dd}");
-
-                if (lastYear != year)
+                try
                 {
-                    Console.WriteLine($"OpenTTD update for {year}");
-                    await new OpenTTD.Udp.ClientDetailInfo().Send(ottd);
-                    var serverDetailInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerDetailInfo>(ottd);
+                    await new OpenTTD.Udp.ClientInfo().Send(ottd);
+                    var serverInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerInfo>(ottd);
+                    var year = serverInfo.GameDate.Year;
+                    Console.WriteLine($"OpenTTD {serverInfo.GameDate:yyyy-MM-dd}");
 
-                    if (year % 10 == 0)
+                    if (lastYear != year)
                     {
-                        var companies = String.Join(", ", serverDetailInfo.Companies.OrderBy(c => -c.Money).Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
-                        await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
-                    }
+                        Console.WriteLine($"OpenTTD update for {year}");
+                        await new OpenTTD.Udp.ClientDetailInfo().Send(ottd);
+                        var serverDetailInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerDetailInfo>(ottd);
 
-                    var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Money >= 0 && c.Income < 0 && c.Money < -2 * c.Income).OrderBy(c => -c.Money);
-                    foreach (var c in companiesInTrouble)
-                    {
-                        await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Money:N0} Yearly income: {c.Income:N0}");
+                        if (year % 10 == 0)
+                        {
+                            var companies = String.Join(", ", serverDetailInfo.Companies.OrderBy(c => -c.Money).Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
+                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
+                        }
+
+                        var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Money >= 0 && c.Income < 0 && c.Money < -2 * c.Income).OrderBy(c => -c.Money);
+                        foreach (var c in companiesInTrouble)
+                        {
+                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Money:N0} Yearly income: {c.Income:N0}");
+                        }
                     }
+                    lastYear = year;
                 }
-                lastYear = year;
+                catch (TimeoutException error)
+                {
+                    Console.WriteLine(error.Message);
+                }
             }
         }
     }

@@ -26,6 +26,8 @@ namespace OpenTTD_IRC_Info.OpenTTD.Udp
 
     class Packet
     {
+        readonly static TimeSpan Timeout = TimeSpan.FromSeconds(15);
+
         public byte Type { get; private set; }
 
         protected Packet(PacketType type)
@@ -50,9 +52,11 @@ namespace OpenTTD_IRC_Info.OpenTTD.Udp
 
         public static async Task<T> Receive<T>(UdpClient client) where T : Packet
         {
-            while (client.Available == 0) Thread.Sleep(100);
+            var timeout = DateTimeOffset.Now + Timeout;
+            while (client.Available == 0 && DateTimeOffset.Now < timeout) Thread.Sleep(100);
+            if (client.Available == 0) throw new TimeoutException($"Timeout of {Timeout} waiting for packet type {typeof(T).Name}");
             var res = await client.ReceiveAsync();
-            if (res.Buffer.Length < 3) throw new InvalidDataException("UDP packet is too short; must be 3 bytes or more");
+            if (res.Buffer.Length < 3) throw new InvalidDataException("Packet is too short; must be 3 bytes or more");
             var size = res.Buffer[0] + (res.Buffer[1] << 8);
             if (size != res.Buffer.Length) throw new InvalidDataException($"Packet length is {res.Buffer.Length}; encoded size is {size}");
             switch ((PacketType)res.Buffer[2])
