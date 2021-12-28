@@ -34,7 +34,7 @@ namespace OpenTTD_IRC_Info
                 {
                     await new AdminPollPacket(AdminUpdateType.AdminUpdateDate, 0).Send(ottdStream);
                     var date = await ServerPacket.Receive<ServerDatePacket>(ottdStream);
-                    var year = date.GameDate.Year;
+                    var year = date.GameDate.AddDays(8).Year;
                     Console.WriteLine($"OpenTTD {date.GameDate:yyyy-MM-dd}");
 
                     if (lastYear != year)
