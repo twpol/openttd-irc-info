@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using OpenTTD_IRC_Info.OpenTTD.Admin;
 
 namespace OpenTTD_IRC_Info
 {
@@ -11,38 +13,55 @@ namespace OpenTTD_IRC_Info
         const int DaysPerWeek = 7;
         const int MSPerWeek = MSPerTick * TicksPerDay * DaysPerWeek;
 
-        static async void Main(string ottdServer, string ircServer, string ircChannel, int ottdPort = 3979, int ircPort = 6667, string ircNickname = "OpenTTDInfo")
+        static async void Main(string ottdServer, string ottdPassword, string ircServer, string ircChannel, int ottdPort = 3977, int ircPort = 6667, string ircNickname = "OpenTTDInfo")
         {
-            var ottd = new UdpClient(ottdServer, ottdPort);
+            var ottd = new TcpClient(ottdServer, ottdPort);
+            ottd.NoDelay = true;
+            var ottdStream = ottd.GetStream();
             var irc = new IRC.Client(ircServer, ircPort, ircNickname);
             var lastYear = 0;
+
+            await new AdminJoinPacket(ottdPassword).Send(ottdStream);
+            var protocol = await ServerPacket.Receive<ServerProtocolPacket>(ottdStream);
+            var welcome = await ServerPacket.Receive<ServerWelcomePacket>(ottdStream);
+
+            Console.WriteLine($"OpenTTD {welcome.Version} - {welcome.Name}");
 
             while (irc.Connected)
             {
                 System.Threading.Thread.Sleep(MSPerWeek);
                 try
                 {
-                    await new OpenTTD.Udp.ClientInfo().Send(ottd);
-                    var serverInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerInfo>(ottd);
-                    var year = serverInfo.GameDate.Year;
-                    Console.WriteLine($"OpenTTD {serverInfo.GameDate:yyyy-MM-dd}");
+                    await new AdminPollPacket(AdminUpdateType.AdminUpdateDate, 0).Send(ottdStream);
+                    var date = await ServerPacket.Receive<ServerDatePacket>(ottdStream);
+                    var year = date.GameDate.Year;
+                    Console.WriteLine($"OpenTTD {date.GameDate:yyyy-MM-dd}");
 
                     if (lastYear != year)
                     {
                         Console.WriteLine($"OpenTTD update for {year}");
-                        await new OpenTTD.Udp.ClientDetailInfo().Send(ottd);
-                        var serverDetailInfo = await OpenTTD.Udp.Packet.Receive<OpenTTD.Udp.ServerDetailInfo>(ottd);
+
+                        await new AdminPollPacket(AdminUpdateType.AdminUpdateCompanyInfo, uint.MaxValue).Send(ottdStream);
+                        var companyInfo = (await ServerPacket.ReceiveList<ServerCompanyInfoPacket>(ottdStream)).ToDictionary(packet => packet.ID);
+
+                        await new AdminPollPacket(AdminUpdateType.AdminUpdateCompanyEconomy, uint.MaxValue).Send(ottdStream);
+                        var companyEconomy = (await ServerPacket.ReceiveList<ServerCompanyEconomyPacket>(ottdStream)).ToDictionary(packet => packet.ID);
+
+                        await new AdminPollPacket(AdminUpdateType.AdminUpdateCompanyStats, uint.MaxValue).Send(ottdStream);
+                        var companyStats = (await ServerPacket.ReceiveList<ServerCompanyStatsPacket>(ottdStream)).ToDictionary(packet => packet.ID);
+
+                        IEnumerable<(ServerCompanyInfoPacket Info, ServerCompanyEconomyPacket Economy, ServerCompanyStatsPacket Stats)> companyList = companyInfo.Select(kvp => (kvp.Value, companyEconomy[kvp.Key], companyStats[kvp.Key]));
 
                         if (year % 10 == 0)
                         {
-                            var companies = String.Join(", ", serverDetailInfo.Companies.OrderBy(c => -c.Money).Select(c => $"{c.Name} ({c.Money:N0} {(c.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Income):N0})"));
+                            var companies = String.Join(", ", companyList.OrderBy(c => -c.Economy.Money).Select(c => $"{c.Info.Name} ({c.Economy.Money:N0} {(c.Economy.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Economy.Income):N0})"));
                             await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
                         }
 
-                        var companiesInTrouble = serverDetailInfo.Companies.Where(c => c.Money >= 0 && c.Income < 0 && c.Money < -2 * c.Income).OrderBy(c => -c.Money);
+                        var companiesInTrouble = companyList.Where(c => c.Economy.Money >= 0 && c.Economy.Income < 0 && c.Economy.Money < -2 * c.Economy.Income).OrderBy(c => -c.Economy.Money);
                         foreach (var c in companiesInTrouble)
                         {
-                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Money:N0} Yearly income: {c.Income:N0}");
+                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Info.Name} might be in trouble! Money: {c.Economy.Money:N0} Yearly income: {c.Economy.Income:N0}");
                         }
                     }
                     lastYear = year;

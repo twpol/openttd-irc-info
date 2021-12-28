@@ -14,9 +14,13 @@ dotnet run [options]
 
   OpenTTD server hostname or IP address.
 
+- `--ottd-password <ottd-password>`
+
+  OpenTTD admin password.
+
 - `--ottd-port <ottd-port>`
 
-  OpenTTD server port (default: 3979).
+  OpenTTD admin port (default: 3977).
 
 - `--irc-server <irc-server>`
 
