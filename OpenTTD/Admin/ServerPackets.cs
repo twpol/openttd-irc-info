@@ -111,7 +111,7 @@ namespace OpenTTD_IRC_Info.OpenTTD.Admin
     {
         public byte ID;
         public long Money;
-        public ulong LoaN;
+        public ulong Loan;
         public long Income;
         public ushort ThisQuarterDeliveredCargo;
         public ulong LastQuarterCompanyValue;
@@ -126,7 +126,7 @@ namespace OpenTTD_IRC_Info.OpenTTD.Admin
         {
             ID = ReadUInt8();
             Money = ReadInt64();
-            LoaN = ReadUInt64();
+            Loan = ReadUInt64();
             Income = ReadInt64();
             ThisQuarterDeliveredCargo = ReadUInt16();
             LastQuarterCompanyValue = ReadUInt64();

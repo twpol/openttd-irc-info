@@ -47,21 +47,18 @@ namespace OpenTTD_IRC_Info
                         await new AdminPollPacket(AdminUpdateType.AdminUpdateCompanyEconomy, uint.MaxValue).Send(ottdStream);
                         var companyEconomy = (await ServerPacket.ReceiveList<ServerCompanyEconomyPacket>(ottdStream)).ToDictionary(packet => packet.ID);
 
-                        await new AdminPollPacket(AdminUpdateType.AdminUpdateCompanyStats, uint.MaxValue).Send(ottdStream);
-                        var companyStats = (await ServerPacket.ReceiveList<ServerCompanyStatsPacket>(ottdStream)).ToDictionary(packet => packet.ID);
-
-                        IEnumerable<(ServerCompanyInfoPacket Info, ServerCompanyEconomyPacket Economy, ServerCompanyStatsPacket Stats)> companyList = companyInfo.Select(kvp => (kvp.Value, companyEconomy[kvp.Key], companyStats[kvp.Key]));
+                        IEnumerable<(string Name, ServerCompanyEconomyPacket Economy)> companyList = companyInfo.Select(kvp => (kvp.Value.Name, companyEconomy[kvp.Key]));
 
                         if (year % 10 == 0)
                         {
-                            var companies = String.Join(", ", companyList.OrderBy(c => -c.Economy.Money).Select(c => $"{c.Info.Name} ({c.Economy.Money:N0} {(c.Economy.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Economy.Income):N0})"));
+                            var companies = String.Join(", ", companyList.OrderBy(c => -c.Economy.Money).Select(c => $"{c.Name} ({c.Economy.Money:N0} {(c.Economy.Income >= 0 ? '+' : '-')}= {Math.Abs(c.Economy.Income):N0})"));
                             await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
                         }
 
                         var companiesInTrouble = companyList.Where(c => c.Economy.Money >= 0 && c.Economy.Income < 0 && c.Economy.Money < -2 * c.Economy.Income).OrderBy(c => -c.Economy.Money);
                         foreach (var c in companiesInTrouble)
                         {
-                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Info.Name} might be in trouble! Money: {c.Economy.Money:N0} Yearly income: {c.Economy.Income:N0}");
+                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Economy.Money:N0} Yearly income: {c.Economy.Income:N0}");
                         }
                     }
                     lastYear = year;
