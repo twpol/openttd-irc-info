@@ -29,7 +29,6 @@ namespace OpenTTD_IRC_Info
 
             while (irc.Connected)
             {
-                System.Threading.Thread.Sleep(MSPerWeek);
                 try
                 {
                     await new AdminPollPacket(AdminUpdateType.AdminUpdateDate, 0).Send(ottdStream);
@@ -55,10 +54,13 @@ namespace OpenTTD_IRC_Info
                             await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {companies}");
                         }
 
-                        var companiesInTrouble = companyList.Where(c => c.Economy.Money >= 0 && c.Economy.Income < 0 && c.Economy.Money < -2 * c.Economy.Income).OrderBy(c => -c.Economy.Money);
-                        foreach (var c in companiesInTrouble)
+                        if (lastYear != 0)
                         {
-                            await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Economy.Money:N0} Yearly income: {c.Economy.Income:N0}");
+                            var companiesInTrouble = companyList.Where(c => c.Economy.Money >= 0 && c.Economy.Income < 0 && c.Economy.Money < -2 * c.Economy.Income).OrderBy(c => -c.Economy.Money);
+                            foreach (var c in companiesInTrouble)
+                            {
+                                await irc.WriteCommand($"PRIVMSG {ircChannel} :{year} - {c.Name} might be in trouble! Money: {c.Economy.Money:N0} Yearly income: {c.Economy.Income:N0}");
+                            }
                         }
                     }
                     lastYear = year;
@@ -67,6 +69,7 @@ namespace OpenTTD_IRC_Info
                 {
                     Console.WriteLine(error.Message);
                 }
+                System.Threading.Thread.Sleep(MSPerWeek);
             }
         }
     }
