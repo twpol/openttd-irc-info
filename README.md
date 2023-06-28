@@ -1,6 +1,6 @@
 # OpenTTD IRC Info
 
-Command-line application to periodically print out company information to IRC.
+Command-line tool for periodically printing out OpenTTD company information to IRC.
 
 ## Synopsis
 
