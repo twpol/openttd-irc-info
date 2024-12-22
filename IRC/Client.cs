@@ -9,13 +9,15 @@ namespace OpenTTD_IRC_Info.IRC
     {
         NetworkStream Stream;
         string Nickname;
+        string Channel;
 
         public bool Connected { get => Stream.Socket.Connected; }
 
-        public Client(string server, int port, string nickname)
+        public Client(string server, int port, string nickname, string channel)
         {
             Stream = new TcpClient(server, port).GetStream();
             Nickname = nickname;
+            Channel = channel;
             Task.Run(this.Run);
         }
 
@@ -57,6 +59,9 @@ namespace OpenTTD_IRC_Info.IRC
 
             switch (parts[0])
             {
+                case "001":
+                    if (!string.IsNullOrEmpty(Channel)) await WriteCommand($"JOIN {Channel}");
+                    break;
                 case "PING":
                     await WriteCommand($"PONG :{parts[1]}");
                     break;

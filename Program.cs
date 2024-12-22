@@ -18,7 +18,7 @@ namespace OpenTTD_IRC_Info
             var ottd = new TcpClient(ottdServer, ottdPort);
             ottd.NoDelay = true;
             var ottdStream = ottd.GetStream();
-            var irc = new IRC.Client(ircServer, ircPort, ircNickname);
+            var irc = new IRC.Client(ircServer, ircPort, ircNickname, ircChannel);
             var lastYear = 0;
 
             await new AdminJoinPacket(ottdPassword).Send(ottdStream);
